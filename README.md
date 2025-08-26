@@ -12,6 +12,7 @@
 <div align="center" style="display: flex; justify-content: center; margin-top: 10px;">
   <a href="https://huggingface.co/nvidia/audio_to_audio_schrodinger_bridge"><img src="https://img.shields.io/badge/🤗-Checkpoints_(1_split)-ED5A22.svg" style="margin-right: 5px;"></a>
   <a href="https://huggingface.co/nvidia/audio_to_audio_schrodinger_bridge"><img src="https://img.shields.io/badge/🤗-Checkpoints_(2_split)-ED5A22.svg" style="margin-right: 5px;"></a>
+  <a href="https://colab.research.google.com/github/NVIDIA/diffusion-audio-restoration/blob/main/A2SB_Audio_Upsampling.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a>
 </div>
 
 # Overview
@@ -73,6 +74,29 @@ python A2SB_inpaint_dataset.py -dn DATASET_NAME -exp ensemble_2split_sampling -i
 cd inference/
 python A2SB_upsample_api.py -f DEGRADED.wav -o RESTORED.wav -n N_STEPS
 ```
+
+## Google Colab Notebook
+
+For a more interactive experience, we provide a Google Colab notebook that allows you to upscale an audio file with a single click.
+
+**Opening the Notebook**
+
+You can open the notebook in Google Colab by clicking the "Open in Colab" badge at the top of this README, or by directly visiting the [`A2SB_Audio_Upsampling.ipynb`](./A2SB_Audio_Upsampling.ipynb) file and clicking the "Open in Colab" link.
+
+**Usage**
+
+The notebook is self-contained and will automatically install all necessary dependencies. Simply follow these steps:
+
+1.  **Open the notebook:** Use one of the methods described above to open the notebook in Google Colab.
+2.  **Run the cells:** Run the cells in the notebook in order from top to bottom.
+    - The first few cells will install dependencies, import libraries, and download the pre-trained model.
+    - You will then be prompted to upload an audio file from your local machine.
+    - After uploading, the next cell will run the upsampling process.
+    - Finally, the last cell will display the original and upscaled audio for comparison, and provide a link to download the upscaled file.
+
+**Deployment**
+
+The Colab notebook is a self-contained environment and does not require any separate deployment steps. All you need is a web browser and a Google account.
 
 ## Requirements
 
