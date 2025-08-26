@@ -59,8 +59,13 @@ class TimePartitionedPretrainedSTFTBridgeModel(LightningModule):
         else:
             print("Using SDE formulation")
         self.test_results = defaultdict(list)
-        assert(len(t_cutoffs) + 1 == len(pretrained_checkpoints))
-        self.load_t_bounded_checkpoints(pretrained_checkpoints, t_cutoffs)
+        if self.t_cutoffs is not None and len(self.t_cutoffs) > 0:
+            assert(len(self.t_cutoffs) + 1 == len(self.pretrained_checkpoints))
+        else:
+            assert(len(self.pretrained_checkpoints) == 1)
+
+        self.t_cutoffs = self.t_cutoffs or []
+        self.load_t_bounded_checkpoints(pretrained_checkpoints, self.t_cutoffs)
         self.fast_inpaint_mode = fast_inpaint_mode
 
     @torch.no_grad()
@@ -82,6 +87,8 @@ class TimePartitionedPretrainedSTFTBridgeModel(LightningModule):
 
     @torch.no_grad()
     def get_vf_model(self, t: float):
+        if not self.t_cutoffs:
+            return self.t_bounded_pretrained_models[0]
         model_idx = 0
         for idx, thresh in enumerate(self.t_cutoffs):
             if t >= thresh:
