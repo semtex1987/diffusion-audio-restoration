@@ -51,28 +51,53 @@ def upsample_one_sample(audio_filename, output_audio_filename, predict_n_steps=5
 
     assert output_audio_filename != audio_filename, "output filename cannot be input filename"
 
+    # Load the base inference config
     inference_config = load_yaml('../configs/inference_files_upsampling.yaml')
+    
     inference_config['data']['predict_filelist'] = [{
         'filepath': audio_filename,
         'output_subdir': '.'
     }]
 
-    # === CRITICAL FIX START ===
+    # 1. Determine Cutoff
     if explicit_cutoff is not None and explicit_cutoff > 0:
         print(f"Using explicit cutoff frequency: {explicit_cutoff} Hz")
         cutoff_freq = int(explicit_cutoff)
     else:
         print("No explicit cutoff provided, attempting to auto-detect...")
         cutoff_freq = compute_rolloff_freq(audio_filename, roll_percent=0.99)
-    # === CRITICAL FIX END ===
 
-    inference_config['data']['transforms_aug'][0]['init_args']['upsample_mask_kwargs'] = {
+    # 2. Define the Masking Configuration
+    mask_config = {
         'min_cutoff_freq': cutoff_freq,
         'max_cutoff_freq': cutoff_freq
     }
+
+    # 3. Get the base transform config (from transforms_aug in the yaml)
+    # We will use this as the template for all other transform lists.
+    base_transform_list = inference_config['data'].get('transforms_aug', [])
+    
+    if not base_transform_list:
+        print("WARNING: transforms_aug is empty in base config! Masking may fail.")
+    else:
+        # Apply the cutoff to the template
+        base_transform_list[0]['init_args']['upsample_mask_kwargs'] = mask_config
+
+    # 4. BROADCAST TO ALL LISTS
+    # We overwrite all transform keys to ensure the inference loader picks it up.
+    print(f"Applying mask (Cutoff: {cutoff_freq}Hz) to all transform lists...")
+    
+    inference_config['data']['transforms_aug'] = base_transform_list
+    inference_config['data']['transforms_aug_val'] = base_transform_list
+    inference_config['data']['eval_transforms_aug'] = base_transform_list
+    
+    # Also add 'transforms' just in case legacy loaders look for it
+    inference_config['data']['transforms'] = base_transform_list
+
+    # Save the temp config
     temporary_yaml_file = save_yaml(inference_config)
 
-    # Note: Ensure the path to ensembled_inference_api.py is correct relative to where this runs
+    # Run the command
     cmd = "cd ../; \
         python ensembled_inference_api.py predict \
             -c configs/ensemble_2split_sampling.yaml \
@@ -80,6 +105,7 @@ def upsample_one_sample(audio_filename, output_audio_filename, predict_n_steps=5
             --model.predict_n_steps={} \
             --model.output_audio_filename={}; \
         cd inference/".format(temporary_yaml_file.replace('../', ''), predict_n_steps, output_audio_filename)
+    
     shell_run_cmd(cmd)
     
     if os.path.exists(temporary_yaml_file):
